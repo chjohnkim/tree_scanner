@@ -1,0 +1,57 @@
+#permission to usb devices
+sudo chmod 777 /dev/ttyXRUSB0  /dev/ttyUSB0 /dev/ttyUSB1 /dev/ttyACM0
+
+#usb buffer size for usb camerea
+sudo sh -c 'echo 2048 > /sys/module/usbcore/parameters/usbfs_memory_mb'
+
+rosrun syncbox_control udev_ping_umass.py
+
+rostopic pub /ping_usb_dev std_msgs/String "t" -1
+
+rostopic pub /ping std_msgs/String "t" -r 125
+
+#only for running the top and bottom global cameras
+rostopic pub /ping std_msgs/String "t" -r 125
+
+# drivers for the hw" robot arm and linear slide
+roslaunch servo_controller servo_client.launch
+roslaunch servo_controller servo_server.launch
+roslaunch ur_modern_driver ur5_bringup_joint_limited.launch robot_ip:=192.168.1.10
+
+
+#check the joint states has the 6 corresponding to the arm + 
+rostopic echo /joint_states
+
+#planning stuff. Moveit and visualization
+roslaunch ur5_moveit_config ur5_moveit_planning_execution.launch limited:=true
+roslaunch ur5_moveit_config moveit_rviz.launch config:=true
+
+#calibrate - make the robot go to the initial position
+rostopic pub /do_calib std_msgs/String "t"
+
+IN HAND CAMERA NOTES
+#list all usb devices and see if the cameras are connected
+lsusb 
+	Bus 002 Device 010: ID 1e10:4000 Point Grey Research, Inc. 
+	Bus 002 Device 003: ID 1e10:4000 Point Grey Research, Inc. 
+
+#use spin view to see if the cameras are working
+
+#launch the ROS camera drivers 
+roslaunch spinnaker_camera_driver firefly_color_launch.launch 
+
+#launch apriltags_ros
+roslaunch apriltags_ros john.launch
+
+#Connect to Cutecom (the port should be USB0):
+double check /dev/ttyUSBX has 777 access
+Send the operation mode to the arduino:
+	't' --> trigger
+	'r' --> continuous trigger
+	's' --> stop
+	'cX' --> X Hz (we use 5 Hz -> c5)
+
+#for visualization
+rosrun rqt_gui rqt_gui    for visualization
+
+
